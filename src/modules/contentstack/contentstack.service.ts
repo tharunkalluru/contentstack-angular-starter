@@ -7,12 +7,21 @@ import { Config } from './config';
 export class ContentstackService {
   Stack: any = {};
   stackConfig: any = {};
+  apiHost: string | undefined = undefined;
   constructor(private config: Config) {
-    this.stackConfig = config;
-    this.Stack = contentstack.Stack(config);
+    this.stackConfig = {
+      api_key: config.api_key,
+      delivery_token: config.delivery_token,
+      environment: config.environment
+    }
+    this.apiHost = config.api_host;
+    this.Stack = contentstack.Stack(this.stackConfig);
+
   }
 
   public stack() {
-    return contentstack.Stack(this.stackConfig);
+    this.Stack = contentstack.Stack(this.stackConfig);
+    this.apiHost && (this.Stack.setHost(this.apiHost));
+    return this.Stack
   }
 }

@@ -7,5 +7,6 @@ export const Config = {
   api_key: '',
   delivery_token: '',
   environment: '',
-  region: ''
+  region: '',
+  api_host: ''
 };
