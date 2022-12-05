@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterContentInit } from '@angular/core';
 import { ContentstackQueryService } from '../../cs.query.service';
 import { Router } from '@angular/router';
 import { SeoService } from '../../seo.service';
@@ -12,7 +12,7 @@ import { actionBlogpost, actionPage } from 'src/app/store/actions/state.actions'
   styleUrls: []
 })
 
-export class ArticleComponent implements OnInit {
+export class ArticleComponent implements OnInit, AfterContentInit {
   constructor(private cs: ContentstackQueryService, private router: Router, private seo: SeoService, private metaTagService: Meta, private store: Store) { }
   page = 'Blog';
   articleContent: any = {};
@@ -43,6 +43,7 @@ export class ArticleComponent implements OnInit {
       this.cs.getEntryWithQuery('page', { key: 'url', value: '/blog' }, []),
       this.cs.getEntryWithQuery('blog_post', { key: 'url', value: this.router.url }, ['author', 'related_post'], ["body", "related_post.body"])
     ]).then(entries => {
+      if (entries[0][0][0].length === 0 || entries[1][0][0].length === 0) { this.router.navigate(["/404"])}
       this.blogContent = entries[0][0][0];
       this.articleContent = entries[1][0][0];
       const pageData = this.filterObject(entries[0][0][0]);
@@ -56,5 +57,10 @@ export class ArticleComponent implements OnInit {
   }
   ngOnInit(): void {
     this.getEntry();
+  }
+  ngAfterContentInit(): void {
+    this.cs.onEntryChange(() => {
+      this.getEntry();
+    })
   }
 }

@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterContentInit } from '@angular/core';
 import { ContentstackQueryService } from '../../cs.query.service';
 import { Meta } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 import { SeoService } from '../../seo.service';
 import { Store } from '@ngrx/store';
 import { actionBlogpost, actionPage } from 'src/app/store/actions/state.actions';
@@ -10,8 +11,8 @@ import { actionBlogpost, actionPage } from 'src/app/store/actions/state.actions'
   templateUrl: './home.component.html',
   styleUrls: []
 })
-export class HomeComponent implements OnInit {
-  constructor(private cs: ContentstackQueryService, private metaTagService: Meta, private seo: SeoService, private store: Store) { }
+export class HomeComponent implements OnInit, AfterContentInit {
+  constructor(private cs: ContentstackQueryService, private router: Router, private metaTagService: Meta, private seo: SeoService, private store: Store) { }
   page = 'Home';
   homeContent: any = {};
   entryUid: string;
@@ -37,10 +38,11 @@ export class HomeComponent implements OnInit {
     return inputObject;
   }
   getEntry() {
-    this.cs.getEntryWithQuery('page', { key: 'url', value: '/' },
+    this.cs.getEntryWithQuery('page', { key: 'url', value: this.router.url },
       ['page_components.from_blog.featured_blogs'],
       ["page_components.from_blog.featured_blogs.body",
         "page_components.section_with_buckets.buckets.description",]).then(entry => {
+          if (entry[0].length === 0) { this.router.navigate(["/404"])}
           this.homeContent = entry[0][0];
           const jsonData = this.filterObject(entry[0][0])
           this.store.dispatch(actionPage({ page: jsonData }));
@@ -48,11 +50,15 @@ export class HomeComponent implements OnInit {
           if (this.homeContent.seo) { this.seo.getSeoField(this.homeContent.seo, this.metaTagService); }
         }, err => {
           console.log(err);
-
         });
 
   }
   ngOnInit(): void {
     this.getEntry();
+  }
+  ngAfterContentInit(): void {
+    this.cs.onEntryChange(() => {
+      this.getEntry();
+    })
   }
 }

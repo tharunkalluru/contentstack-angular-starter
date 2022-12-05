@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterContentInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ContentstackQueryService } from '../../cs.query.service';
 import { Store } from '@ngrx/store';
@@ -9,7 +9,7 @@ import { actionHeader } from 'src/app/store/actions/state.actions';
   templateUrl: './header.component.html',
   styleUrls: []
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements OnInit, AfterContentInit {
 
   constructor(private router: Router, private cs: ContentstackQueryService, private store: Store) { }
   headerContent: any = {};
@@ -17,6 +17,7 @@ export class HeaderComponent implements OnInit {
   filterObject(inputObject) {
     const unWantedProps = [
       "uid",
+      "_owner",
       "_version",
       "ACL",
       "_in_progress",
@@ -35,11 +36,38 @@ export class HeaderComponent implements OnInit {
     }
     return inputObject;
   }
+
+  buildNavigation(ent, hd) {
+    let newHeader = { ...hd };
+    if (ent.length !== newHeader.navigation_menu.length) {
+      ent.forEach((entry) => {
+        const hFound = newHeader?.navigation_menu.find(
+          (navLink) => navLink.label === entry.title
+        );
+        if (!hFound) {
+          newHeader.navigation_menu?.push({
+            label: entry.title,
+            page_reference: [
+              { title: entry.title, url: entry.url, $: entry.$ },
+            ],
+            $: {}
+          });
+        }
+      });
+    }
+    return newHeader
+  }
+
+
+
   getEntry() {
-    this.cs.getEntry('header', ['navigation_menu.page_reference'],["notification_bar.announcement_text"]).then(entry => {
+    Promise.all([
+      this.cs.getEntry('page'),
+      this.cs.getEntry('header', ['navigation_menu.page_reference'], ["notification_bar.announcement_text"])
+    ]).then(entry => {
       this.activeLink = this.router.url;
-      this.headerContent = entry[0][0];
-      const jsonData = this.filterObject(entry[0][0]);
+      this.headerContent = this.buildNavigation(entry[0][0], entry[1][0][0])
+      const jsonData = this.filterObject(this.headerContent);
       this.store.dispatch(actionHeader({ header: jsonData }));
     }, err => {
       console.log(err, 'err');
@@ -48,5 +76,10 @@ export class HeaderComponent implements OnInit {
 
   ngOnInit(): void {
     this.getEntry();
+  }
+  ngAfterContentInit(): void {
+    this.cs.onEntryChange(() => {
+      this.getEntry();
+    })
   }
 }
