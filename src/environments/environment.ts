@@ -1,6 +1,5 @@
-
 export const environment = {
-  production: true
+  production: true,
 };
 
 export const Config = {
@@ -8,5 +7,8 @@ export const Config = {
   delivery_token: '',
   environment: '',
   region: '',
-  api_host: ''
+  management_token: '',
+  api_host: '',
+  app_host: '',
+  live_preview: true,
 };
