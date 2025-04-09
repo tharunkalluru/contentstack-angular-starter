@@ -12,4 +12,7 @@ export const Config = {
   api_host: '',
   app_host: '',
   live_preview: true,
+  preview_token: '',
+  preview_host: '',
+
 };
